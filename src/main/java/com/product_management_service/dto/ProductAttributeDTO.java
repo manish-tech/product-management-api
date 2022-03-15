@@ -1,15 +1,13 @@
-package entity;
+package com.product_management_service.dto;
 
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 
-import java.io.Serializable;
-
 @Builder
 @Getter
 @Setter
-public class ProductAttributes implements Serializable {
+public class ProductAttributeDTO {
     private String name;
     private String value;
 }

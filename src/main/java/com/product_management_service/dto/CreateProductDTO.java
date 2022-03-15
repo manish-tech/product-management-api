@@ -1,4 +1,4 @@
-package dto;
+package com.product_management_service.dto;
 
 import lombok.Builder;
 import lombok.Getter;
@@ -11,13 +11,12 @@ import java.util.List;
 @Setter
 @Builder
 public class CreateProductDTO {
-    private String id;
     private String name;
     private String description;
     private String brand;
     private Float length;
     private Float width;
     private Float height;
-    private List<ProductAttributesDTO> productAttributes = new ArrayList<>();
-    private List<ProductImagesDTO> productImages = new ArrayList<>();
+    private List<ProductAttributeDTO> productAttributes = new ArrayList<>();
+    private List<ProductImageDTO> productImages = new ArrayList<>();
 }

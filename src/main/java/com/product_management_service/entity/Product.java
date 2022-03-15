@@ -1,4 +1,4 @@
-package entity;
+package com.product_management_service.entity;
 
 
 import lombok.*;
@@ -23,6 +23,6 @@ public class Product {
     private Float length;
     private Float width;
     private Float height;
-    private List<ProductAttributes> productAttributes = new ArrayList<>();
-    private List<ProductImages> productImages = new ArrayList<>();
+    private List<ProductAttribute> productAttributes = new ArrayList<>();
+    private List<ProductImage> productImages = new ArrayList<>();
 }
