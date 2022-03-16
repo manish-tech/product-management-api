@@ -9,6 +9,7 @@ public enum Names {
     PRODUCT_ATTRIBUTES("productAttributes"),
     PRODUCT_IMAGES("productImages"),
     NAME("name"),
-    VALUE("value");
+    VALUE("value"),
+    SUCCESS("success");
     public final String value;
 }
