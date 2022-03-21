@@ -10,6 +10,8 @@ import com.product_management_service.entity.ProductAttribute;
 import com.product_management_service.entity.ProductImage;
 import com.product_management_service.exceptions.ErrorCode;
 import com.product_management_service.exceptions.SystemException;
+import com.product_management_service.utills.AttributeUtills;
+import com.product_management_service.utills.ProductImageUtills;
 import com.product_management_service.utills.ProductUtills;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate;
@@ -39,7 +41,8 @@ public class ProductDAO {
     }
 
     public  Mono<UpdateResponseDTO> editProduct(UpdateProductDTO updateProductDTO){
-        return findProductById(updateProductDTO.getProductId())
+        Mono<Product> productMono = findProductById(updateProductDTO.getProductId());
+        return productMono
                 .hasElement()
                 .flatMap((exist)->{
                     if (Boolean.FALSE.equals(exist)){
@@ -50,8 +53,27 @@ public class ProductDAO {
                                         .build()
                         );
                     }
-                    Product product = ProductUtills.dtoToEntity(updateProductDTO);
-                    return productRepository.save(product);
+
+                   return productMono.flatMap((product)->{
+                       if(AttributeUtills.checkDuplicateAttributeName(product.getProductAttributes(),updateProductDTO.getProductAttributes())){
+                           return Mono.error(SystemException.builder()
+                                   .errorCode(ErrorCode.ATTRIBUTE_NAME_ALREADY_EXISTS)
+                                   .message("duplicate attribute name found")
+                                   .build()
+                           );
+                       }
+                       else if(ProductImageUtills.checkDuplicateImage(product.getProductImages(),updateProductDTO.getProductImages())){
+                           return Mono.error(SystemException.builder()
+                                   .errorCode(ErrorCode.IMAGE_CONFLICT)
+                                   .message("duplicate image found")
+                                   .build()
+                           );
+                       }
+                       else {
+                           product = ProductUtills.dtoToEntity(updateProductDTO);
+                           return productRepository.save(product);
+                       }
+                   });
                 }).map((product -> {
                     return UpdateResponseDTO.builder()
                             .data(product)
@@ -62,7 +84,8 @@ public class ProductDAO {
     }
 
     public Mono<UpdateResponseDTO> addAttribute(ProductAttribute productAttribute,String productId){
-        return productRepository.existsById(productId)
+        Mono<Product> productMono = productRepository.findById(productId);
+        return productMono.hasElement()
                 .flatMap((exists)->{
                     if (Boolean.FALSE.equals(exists)){
                         return Mono.error(SystemException.builder()
@@ -70,27 +93,46 @@ public class ProductDAO {
                                 .message("product doesn't exists")
                                 .build());
                     }
-                    Query query = new Query(Criteria.where("_id").is(productId));
-                    Update update = new Update();
-                    update.addToSet(Names.PRODUCT_ATTRIBUTES.getValue(),productAttribute);
-                    Mono<UpdateResult> updateResult = reactiveMongoTemplate.updateFirst(query,update,Product.class);
-                    return updateResult.flatMap((r)->{
-                        if(r.getModifiedCount() == 0L){
+
+                    return productMono.flatMap((product -> {
+                        Boolean isAttributeNameExists = product.getProductAttributes()
+                                .stream()
+                                .parallel()
+                                .anyMatch((attribute)->{
+                                    if(attribute.getName().equals(productAttribute.getName())){
+                                        return Boolean.TRUE;
+                                    }
+                                    return Boolean.FALSE;
+                                });
+                        if(Boolean.TRUE.equals(isAttributeNameExists)){
                             return Mono.error(SystemException.builder()
-                                    .errorCode(ErrorCode.ATTRIBUTE_CONFLICT)
-                                    .message("attribute already exists")
-                                    .build());
+                                    .errorCode(ErrorCode.ATTRIBUTE_NAME_ALREADY_EXISTS)
+                                    .message("this attribute name already exists")
+                                    .build()) ;
                         }
-                        return Mono.just(UpdateResponseDTO.builder()
-                                .data(productAttribute)
-                                .modifiedCount(r.getModifiedCount())
-                                .status(Names.SUCCESS.getValue())
-                                .build());
-                    });
+                        Query query = new Query(Criteria.where("_id").is(productId));
+                        Update update = new Update();
+                        update.addToSet(Names.PRODUCT_ATTRIBUTES.getValue(),productAttribute);
+                        Mono<UpdateResult> updateResult = reactiveMongoTemplate.updateFirst(query,update,Product.class);
+                        return updateResult.flatMap((r)->{
+                            if(r.getModifiedCount() == 0L){
+                                return Mono.error(SystemException.builder()
+                                        .errorCode(ErrorCode.ATTRIBUTE_CONFLICT)
+                                        .message("attribute already exists")
+                                        .build());
+                            }
+                            return Mono.just(UpdateResponseDTO.builder()
+                                    .data(productAttribute)
+                                    .modifiedCount(r.getModifiedCount())
+                                    .status(Names.SUCCESS.getValue())
+                                    .build());
+                        });
+                    }));
+
                 });
     }
     public Mono<UpdateResponseDTO> addImageUrl(ProductImage productImage, String productId){
-        return productRepository.existsById(productId)
+         return productRepository.existsById(productId)
                 .flatMap((exists)->{
                     if (Boolean.FALSE.equals(exists)){
                         return Mono.error(
@@ -121,25 +163,9 @@ public class ProductDAO {
                 });
     }
 
-//    public  Update setIndividualAttributesOfArrayOfObjects(String classFullName,T entityObject,String arrayName){
-//        List<String> fieldNames = ProductUtills.getFeildNamesOfAClass(classFullName);
-//        Update update = new Update();
-//
-//
-//            fieldNames.forEach((fieldName)->{
-//                update.set(arrayName+"."+ Operators.POSITIONAL_UPDATE_OPERATOR.getValue()+"."+fieldName,entityObject.getName());
-//            });
-//
-//
-//
-//
-//
-//        update.set(Names.PRODUCT_ATTRIBUTES.getValue()+"."+Operators.POSITIONAL_UPDATE_OPERATOR.getValue()+"."+Names.VALUE.getValue(),productAttribute.getValue());
-//        return update;
-//    }
-
-    public Mono<UpdateResponseDTO> updateAttribute(String name,String productId,ProductAttribute productAttribute){
-        return productRepository.existsById(productId)
+    public Mono<UpdateResponseDTO> updateAttribute(String currentName,String productId,ProductAttribute productAttribute){
+        Mono<Product> productMono = productRepository.findById(productId);
+        return productMono.hasElement()
             .flatMap((exists)-> {
                 if (Boolean.FALSE.equals(exists)) {
                     return Mono.error(SystemException.builder()
@@ -148,25 +174,54 @@ public class ProductDAO {
                             .build()
                     );
                 }
-                Query query = new Query(Criteria.where("_id").is(productId))
-                        .addCriteria(Criteria.where(Names.PRODUCT_ATTRIBUTES.getValue()+".name").is(name));
-                Update update = new Update();
-                update.set(Names.PRODUCT_ATTRIBUTES.getValue()+"."+Operators.POSITIONAL_UPDATE_OPERATOR.getValue()+"."+Names.NAME.getValue(),productAttribute.getName());
-                update.set(Names.PRODUCT_ATTRIBUTES.getValue()+"."+Operators.POSITIONAL_UPDATE_OPERATOR.getValue()+"."+Names.VALUE.getValue(),productAttribute.getValue());
-                Mono<UpdateResult> updateResult = reactiveMongoTemplate.updateFirst(query,update,Product.class).doOnError((t)->System.out.println(t.getMessage()));
-                return updateResult.flatMap((r)->{
-                    if(r.getModifiedCount() == 0L){
+                return productMono.flatMap((product -> {
+                    Boolean isAttributeNameExists = product.getProductAttributes()
+                            .stream()
+                            .parallel()
+                            .anyMatch((attribute)->{
+                                if(attribute.getName().equals(currentName)){
+                                    attribute.setName(productAttribute.getName());
+                                    return Boolean.TRUE;
+                                }
+                                return Boolean.FALSE;
+                            });
+                    Boolean isDuplicateAttributeNamePossible = AttributeUtills.checkDuplicateAttributeName(product.getProductAttributes(),productAttribute);
+                    Query query = new Query(Criteria.where("_id").is(productId))
+                            .addCriteria(Criteria.where(Names.PRODUCT_ATTRIBUTES.getValue()+".name").is(currentName));
+                    Update update = new Update();
+                    if(isDuplicateAttributeNamePossible){
                         return Mono.error(SystemException.builder()
-                                .errorCode(ErrorCode.ATTRIBUTE_UPDATE_CONFLICT)
-                                .message("updated attribute by same values")
+                                                .errorCode(ErrorCode.ATTRIBUTE_NAME_ALREADY_EXISTS)
+                                                .message("attribute name already exists")
+                                                .build()
+                        );
+                    }
+                    else if(Boolean.TRUE.equals(isAttributeNameExists) ){
+                        update.set(Names.PRODUCT_ATTRIBUTES.getValue()+"."+Operators.POSITIONAL_UPDATE_OPERATOR.getValue()+"."+Names.NAME.getValue(),productAttribute.getName());
+                        update.set(Names.PRODUCT_ATTRIBUTES.getValue()+"."+Operators.POSITIONAL_UPDATE_OPERATOR.getValue()+"."+Names.VALUE.getValue(),productAttribute.getValue());
+                        Mono<UpdateResult> updateResult = reactiveMongoTemplate.updateFirst(query,update,Product.class);
+                        return updateResult.flatMap((r)->{
+                            if(r.getModifiedCount() == 0L){
+                                    return Mono.error(SystemException.builder()
+                                            .errorCode(ErrorCode.ATTRIBUTE_UPDATE_CONFLICT)
+                                            .message("updated attribute by same values")
+                                            .build());
+                            }
+                            return Mono.just(UpdateResponseDTO.builder()
+                                    .data(productAttribute)
+                                    .modifiedCount(r.getModifiedCount())
+                                    .status(Names.SUCCESS.getValue())
+                                    .build());
+                        });
+                    }
+                    else{
+                        return Mono.error(SystemException.builder()
+                                .errorCode(ErrorCode.ATTRIBUTE_NOT_FOUND)
+                                .message("attribute name doesn't exists")
                                 .build());
                     }
-                    return Mono.just(UpdateResponseDTO.builder()
-                            .data(productAttribute)
-                            .modifiedCount(r.getModifiedCount())
-                            .status(Names.SUCCESS.getValue())
-                            .build());
-                });
+
+                }));
             });
     }
 
@@ -180,6 +235,7 @@ public class ProductDAO {
                                 .message("product doesn't exists")
                                 .build()
                         );
+
                     }
                     Query query = new Query(Criteria.where("_id").is(productId));
                     Update update = new Update();
@@ -212,21 +268,25 @@ public class ProductDAO {
                         );
                     }
                     return productRepository.deleteById(productId)
-                            .map((Void v)->{
-                                return UpdateResponseDTO.
-                                        builder()
-                                        .modifiedCount(1L)
-                                        .status(Names.SUCCESS.getValue())
-                                        .build();
-                            }
-                    );
+                            .then(Mono.just(UpdateResponseDTO.builder()
+                                    .modifiedCount(1L)
+                                    .status(Names.SUCCESS.getValue())
+                                    .build())
+                            )
+                            .map((updateResponseDTO)->{
+                                return updateResponseDTO;
+                            });
                 });
     }
-    public Flux<Product> getAllProducts(){
-        return  productRepository.findAll();
+
+    public Flux<Product> getAllProducts() {
+        return productRepository.findAll()
+                .switchIfEmpty(Flux.error(
+                        SystemException.builder()
+                                .errorCode(ErrorCode.PRODUCT_NOT_FOUND)
+                                .message("no products found")
+                                .build()
+                ));
+
     }
-
-
-
-
 }

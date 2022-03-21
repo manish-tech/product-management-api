@@ -15,6 +15,7 @@ public enum ErrorCode {
     PRODUCT_VALIDATION_ERROR(BAD_REQUEST, "Validation error"),
     ENTITY_NOT_FOUND(NOT_FOUND, "Entity not found"),
     IMAGE_CONFLICT(CONFLICT, "Image already exists"),
+    ATTRIBUTE_NAME_ALREADY_EXISTS(CONFLICT,"attribute name already exists"),
     ATTRIBUTE_NOT_FOUND(INTERNAL_SERVER_ERROR,"System error"),
     ATTRIBUTE_CONFLICT(CONFLICT,"attribute already exists"),
     ATTRIBUTE_UPDATE_CONFLICT(CONFLICT,"updated attribute by same values"),

@@ -47,7 +47,7 @@ public class ProductUtills {
         return productAttributesDTO
                 .stream()
                 .map((attribute)->{
-                    return productAttributeDTOToProductAttributes(attribute);
+                    return productAttributeDTOToProductAttribute(attribute);
                 }).collect(Collectors.toList());
     }
 
@@ -59,7 +59,7 @@ public class ProductUtills {
                 }).collect(Collectors.toList());
     }
 
-    public static ProductAttribute productAttributeDTOToProductAttributes(ProductAttributeDTO productAttributesDTO){
+    public static ProductAttribute productAttributeDTOToProductAttribute(ProductAttributeDTO productAttributesDTO){
         return ProductAttribute.builder()
                 .name(productAttributesDTO.getName())
                 .value(productAttributesDTO.getValue())

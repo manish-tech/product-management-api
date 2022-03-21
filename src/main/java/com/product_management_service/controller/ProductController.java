@@ -10,6 +10,7 @@ import reactor.core.publisher.Mono;
 import com.product_management_service.service.ProductService;
 
 import javax.validation.Valid;
+import javax.validation.constraints.NotEmpty;
 
 @RestController
 @RequestMapping("products")
@@ -32,21 +33,21 @@ public class ProductController {
        return productService.editProduct(updateProductDTO);
     }
     @PostMapping("addAttribute/{productId}")
-    public Mono<UpdateResponseDTO> addAttribute(@RequestBody ProductAttributeDTO productAttributeDTO,@PathVariable String productId){
+    public Mono<UpdateResponseDTO> addAttribute(@Valid @RequestBody ProductAttributeDTO productAttributeDTO,@PathVariable String productId){
        return productService.addAttribute(productAttributeDTO,productId);
     }
     @PutMapping("updateAttribute/{productId}")
-    public Mono<UpdateResponseDTO> updateAttribute(@RequestBody ProductAttributeDTO productAttributeDTO,@PathVariable String productId , @RequestParam String currentName ){
+    public Mono<UpdateResponseDTO> updateAttribute(@Valid @RequestBody ProductAttributeDTO productAttributeDTO,@PathVariable String productId , @RequestParam String currentName ){
         return productService.updateAttribute(productAttributeDTO,productId,currentName);
     }
 
     @PutMapping("addImageURL/{productId}")
-    public Mono<UpdateResponseDTO> addImageUrl(@RequestBody ProductImageDTO productImageDTO,@PathVariable String productId){
+    public Mono<UpdateResponseDTO> addImageUrl(@Valid @RequestBody ProductImageDTO productImageDTO,@PathVariable String productId){
        return productService.addImageUrl(productImageDTO,productId);
     }
 
     @DeleteMapping("deleteAttribute/{productId}")
-    public Mono<UpdateResponseDTO> deleteAttribute(@PathVariable String productId,@RequestParam String attributeName){
+    public Mono<UpdateResponseDTO> deleteAttribute(@PathVariable String productId, @RequestParam String attributeName){
        return productService.deleteAttribute(productId,attributeName);
     }
     @DeleteMapping("deleteProduct/{productId}")

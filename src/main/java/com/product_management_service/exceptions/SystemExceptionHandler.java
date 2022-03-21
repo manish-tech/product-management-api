@@ -17,6 +17,7 @@ import java.util.List;
 public class SystemExceptionHandler {
     @ExceptionHandler(WebExchangeBindException.class)
     public final ResponseEntity<ErrorResponse> handleValidationException(WebExchangeBindException exception){
+
         List<Error> errors = new ArrayList<>();
         exception.getBindingResult().getFieldErrors()
                 .forEach(error -> errors.add(
@@ -47,6 +48,7 @@ public class SystemExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponse> handleException(Exception ex) {
+
         List<Error> errors = new ArrayList<>();
         errors.add(
                 Error.builder()

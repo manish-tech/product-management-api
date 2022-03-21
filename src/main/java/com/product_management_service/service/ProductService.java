@@ -36,7 +36,7 @@ public class ProductService {
     }
 
     public Mono<UpdateResponseDTO> addAttribute(ProductAttributeDTO productAttributeDTO,String productId){
-        ProductAttribute productAttribute = ProductUtills.productAttributeDTOToProductAttributes(productAttributeDTO);
+        ProductAttribute productAttribute = ProductUtills.productAttributeDTOToProductAttribute(productAttributeDTO);
         return productDAO.addAttribute(productAttribute,productId);
     }
     public Mono<UpdateResponseDTO> addImageUrl(ProductImageDTO productImageDTO,String productId){
@@ -44,7 +44,7 @@ public class ProductService {
         return productDAO.addImageUrl(productImage,productId);
     }
     public Mono<UpdateResponseDTO> updateAttribute(ProductAttributeDTO productAttributeDTO,String productId,String currentName){
-        ProductAttribute productAttribute = ProductUtills.productAttributeDTOToProductAttributes(productAttributeDTO);
+        ProductAttribute productAttribute = ProductUtills.productAttributeDTOToProductAttribute(productAttributeDTO);
         return productDAO.updateAttribute(currentName,productId,productAttribute);
     }
 

@@ -1,9 +1,7 @@
 package com.product_management_service.dto;
 
 import com.product_management_service.constants.MessageConstants;
-import lombok.Builder;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.validator.constraints.Length;
 
 import javax.validation.Valid;
@@ -15,6 +13,8 @@ import java.util.List;
 @Getter
 @Setter
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class CreateProductDTO {
    @NotEmpty(message = "name " + MessageConstants.INVALID_MISSING)
     private String name;
