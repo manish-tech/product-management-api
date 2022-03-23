@@ -38,4 +38,19 @@ public class AttributeUtills {
         }
         return Boolean.FALSE;
     }
+
+    public static Boolean checkDuplicateAttributeName(List<ProductAttributeDTO> productAttributeDTOList){
+        for (ProductAttributeDTO productAttributeDTO : productAttributeDTOList){
+            Integer count = 0;
+            for (ProductAttributeDTO productAttributeDTO1 : productAttributeDTOList){
+                if(productAttributeDTO.getName().equals(productAttributeDTO1.getName())){
+                    count++;
+                }
+                if(count == 2){
+                    return Boolean.TRUE;
+                }
+            }
+        }
+        return Boolean.FALSE;
+    }
 }

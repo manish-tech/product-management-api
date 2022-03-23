@@ -2,6 +2,12 @@ package com.product_management_service.controller;
 
 import com.product_management_service.dto.*;
 import com.product_management_service.entity.Product;
+import com.product_management_service.entity.ProductAttribute;
+import com.product_management_service.exceptions.ErrorCode;
+import com.product_management_service.exceptions.SystemException;
+import com.product_management_service.utills.AttributeUtills;
+import com.product_management_service.utills.ProductImageUtills;
+import com.product_management_service.utills.Validation;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.web.bind.annotation.*;
@@ -26,10 +32,18 @@ public class ProductController {
 
     @PostMapping("createProduct")
     public Mono<Product> createProduct(@Valid @RequestBody CreateProductDTO createProductDTO){
+        SystemException exception = null;
+        if((exception = Validation.duplicateProductAttributeNameAndImages(createProductDTO)) != null){
+           return Mono.error(exception);
+       }
        return productService.createProduct(createProductDTO);
     }
     @PutMapping("editProduct")
     public Mono<UpdateResponseDTO> editProduct(@Valid @RequestBody UpdateProductDTO updateProductDTO){
+        SystemException exception = null;
+        if((exception = Validation.duplicateProductAttributeNameAndImages(updateProductDTO)) != null){
+            return Mono.error(exception);
+        }
        return productService.editProduct(updateProductDTO);
     }
     @PostMapping("addAttribute/{productId}")

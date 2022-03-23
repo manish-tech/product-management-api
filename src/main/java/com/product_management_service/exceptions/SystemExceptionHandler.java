@@ -46,21 +46,21 @@ public class SystemExceptionHandler {
         return new ResponseEntity<>(errorResponse, exception.getErrorCode().getHttpStatus());
     }
 
-    @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponse> handleException(Exception ex) {
-
-        List<Error> errors = new ArrayList<>();
-        errors.add(
-                Error.builder()
-                        .errorCode(ErrorCode.PRODUCTS_INTERNAL_ERROR)
-                        .message(MessageConstants.INTERNAL_SERVER_ERROR)
-                        .build()
-        );
-        ErrorResponse errorResponse = ErrorResponse.builder()
-                .errors(errors)
-                .build();
-        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
-    }
+//    @ExceptionHandler(Exception.class)
+//    public ResponseEntity<ErrorResponse> handleException(Exception ex) {
+//
+//        List<Error> errors = new ArrayList<>();
+//        errors.add(
+//                Error.builder()
+//                        .errorCode(ErrorCode.PRODUCTS_INTERNAL_ERROR)
+//                        .message(MessageConstants.INTERNAL_SERVER_ERROR)
+//                        .build()
+//        );
+//        ErrorResponse errorResponse = ErrorResponse.builder()
+//                .errors(errors)
+//                .build();
+//        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
+//    }
 
     @ExceptionHandler(JsonProcessingException.class)
     public ResponseEntity<ErrorResponse> handleInvalidRequestDataType(
